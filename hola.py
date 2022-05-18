@@ -1,1 +1,1 @@
-print("hola caracola, hehe,Dinamica rules")
+print("hola caracola, hehe,Dinamica rules, ...")

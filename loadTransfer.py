@@ -31,7 +31,7 @@ WFLs = WFRs = WF/2 #Front static wheel loads (N)
 #Individual wheel loads during maximum acceleration
 def GetIndividualWheelLoadsma(fricctionCoeficcient,):
     TF = [(WR*fricctionCoeficcient)/(1-((HeightCenterOfMass*fricctionCoeficcient)/DistanceBetweenAxes))] #Traction force (N)
-    IWxma = (TF*HeightCenterOfMass)/DistanceBetweenAxes #Longitudinal load transfer (N)
+    IWxma = (TF*HeightCenterOfMass)/DistanceBetweenAxes #Longitudinal load transfer with Tractiion Force (N)
     WRLma = WRRma = (WR+IWxma)/2 #Rear wheel loads [maximum acceleration] (N)
     WFLma = WFRma = (WF-IWxma)/2 #Front wheel loads [maximum acceleration] (N)
     print("Front Wheel Loads at Max Acceleration: "+WFRma)
@@ -66,9 +66,9 @@ def Force(power, speed):
 #Individual wheel loads during maximum breaking
 def GetIndividualWheelLoadsmb(fricctionCoeficcient,):
     BF = W*fricctionCoeficcient #Breaking force (N)
-    IWxmb = (BF*HeightCenterOfMass)/DistanceBetweenAxes  #Longitudinal weight transfer (N)
-    WRLmb = WRRmb = (WR-IWxmb)/2 #Rear wheel loads (N)
-    WFLmb = WFRmb = (WR+IWxmb)/2 #Front wheel loads (N)
+    IWxmb = (BF*HeightCenterOfMass)/DistanceBetweenAxes  #Longitudinal weight transfer With Braking Force (N)
+    WRLmb = WRRmb = (WR-IWxmb)/2 #Rear wheel loads [maximum braking] (N)
+    WFLmb = WFRmb = (WR+IWxmb)/2 #Front wheel loads [maximum braking] (N)
     PRmb = ((WRLmb+WRRmb)/IWxmb)*100 #% to front maximum breaking
     PFmb = (100-PRmb)/IWxmb #% to rear maximum breaking
 
@@ -79,6 +79,31 @@ ambG = amb/g #Deceleration in g
 #"guiacoche" PG 21 del libro (PG 32 PDF)
 #Cornering force
 def GetCorneringForce (fricctionCoeficcient):
-    CF = W*fricctionCoeficcient #Maximum cornering force
+    CF = W*fricctionCoeficcient #Maximum cornering force (N)
 
-#
+#Maximum total lateral load transfer
+LWTy = (GetCorneringForce.CF*HeightCenterOfMass)/AxisDistance #Total lateral weight transfer (N)
+
+#Velocity that the car can travel arround a RadC (m) radius corner
+def GetVelocityArroundXRadiusCroner (RadC):
+    vRC = (LWTy*RadC)/TotalCarMass #The velocity that the car can travel arround a radius corner (m/s)
+    vRC2 = vRC*(3600/1000) #The velocity that the car can travel arround a radius corner (km/h)
+
+#"guiacoche" PG 27 del libro (PG 38 PDF)
+#Individual wheel loads during maximum braking with downforce
+def GetIndividualWheelLoadsWithDownforce (ADF, fricctionCoeficcient): #ADF in g
+    DF = W*ADF #Downfroce (N)
+    ETWD = W*DF #Effective total weight of the car (N)
+    DWR = WR+DF #Rear axe load with downforce (N)
+    DWF = DF-DWR #Front axe load with downforce (N)
+    DBF = ETWD*fricctionCoeficcient #Braking force with doenforce (N)
+    DWx = (DBF*HeightCenterOfMass)/AxisDistance
+
+#Maximum deceleration in both m/s^2 and equivalent g forces with downforce
+DWFL = DWFR = (GetIndividualWheelLoadsWithDownforce.DWF + GetIndividualWheelLoadsWithDownforce.DBF)/2 #Front wheel loads with downforce (N)
+DWRL = DWRR = (GetIndividualWheelLoadsWithDownforce.DWR - GetIndividualWheelLoadsWithDownforce.DBF)/2 #Rear wheel loads with downforce (N)
+def GetDecelerationWithDownforce(DragBraking): #DragBraking in g
+    ABF = W*DragBraking #Air braking force with downforce (N)
+    DFT = ABF+GetIndividualWheelLoadsWithDownforce.DBF #Total braking force with downfroce (N)
+    da = DFT/TotalCarMass #Deceleation with downforce (m/s^2)
+    daG = da/g #Deceleation with downforce in g
